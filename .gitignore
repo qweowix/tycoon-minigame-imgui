@@ -1,0 +1,29 @@
+# Visual Studio
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Build folders
+Debug/
+Release/
+x64/
+x86/
+
+# ImGui
+imgui.ini
+
+# Compiled files
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.log
+
+# OS trash
+Thumbs.db
+.DS_Store
+cpp
+cpp menuimgui/
+menuimgui/menuimgui.filters
