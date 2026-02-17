@@ -1,7 +1,5 @@
 # Visual Studio
 .vs/
-*.vcxproj
-*.vcxproj.filters
 *.vcxproj.user
 
 # Build folders
@@ -25,4 +23,3 @@ Thumbs.db
 .DS_Store
 cpp
 cpp menuimgui/
-menuimgui/menuimgui.filters
