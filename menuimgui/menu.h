@@ -48,6 +48,7 @@ void RenderMenu(bool* open);
 void SetImguiStyle();
 void SaveGame();
 void LoadGame();
+void Upgrade(int& name, int price, int level);
 
 void SetMainIconPath(const std::string& path);
 void SetIconPath(const std::string& name, const std::string& path);

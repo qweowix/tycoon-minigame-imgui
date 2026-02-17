@@ -8,6 +8,7 @@
 #include "imgui_impl_dx9.h"
 #include "imgui_impl_win32.h"
 #include "stb_image.h"
+#include "miniaudio.h"
 #include <shlobj.h>
 #include <d3d9.h>
 #include <dinput.h>
@@ -36,6 +37,17 @@ extern D3DPRESENT_PARAMETERS    g_d3dpp;
 extern ImFont* DefaultFont;
 extern ImFont* BigFont;
 extern ImFont* MiniFont;
+
+extern ma_engine engine;
+extern bool isAudioInitialized;
+
+void InitAudio();
+void CleanupAudio();
+bool PlaySoundFromWidePath(const std::wstring& path);
+
+extern bool cantafford;
+
+inline std::vector<std::wstring> clicksounds;
 
 extern float dynamicWindowWidth;
 extern float dynamicWindowHeight;

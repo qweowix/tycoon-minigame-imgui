@@ -69,6 +69,7 @@
     <ClInclude Include="stb_image.h">
       <Filter>menu</Filter>
     </ClInclude>
+    <ClInclude Include="miniaudio.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">

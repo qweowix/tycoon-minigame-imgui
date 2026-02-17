@@ -1,15 +1,20 @@
+#define MINIAUDIO_IMPLEMENTATION
 #include "../menu.h"
 #include "imgui.h"
 #pragma comment(lib, "Shell32.lib")
 
+static float clickVolume = 0.5f;
 
+int idx = 0;
+
+bool cantafford = false;
 
 // get cooldowns and upgrade values
 
 int GetminerCountdown(int miner) {
     if (miner <= 0) return 0;
     int base = (miner == 1) ? 20 : 15;
-    int petReduction = (equiped_pet == 2) ? 3 : 0;
+    int petReduction = (equiped_pet == 2) ? 7 : 0;
     int result = base - petReduction;
     return std::max(1, result);
 }
@@ -28,21 +33,21 @@ int GetPPC(int manual) {
     case 1: return 1;
     case 2: return 2;
     case 3: return 5;
-    case 4: return 10;
-    case 5: return 20;
-	case 6: return 30;
+    case 4: return 12;
+    case 5: return 24;
+	case 6: return 40;
     default: return 0;
     }
 }
 int GetGPPS(int iauto) {
     switch (iauto)
     {
-    case 1: return 1;
-    case 2: return 5;
-    case 3: return 10;
-    case 4: return 15;
-    case 5: return 20;
-    case 6: return 35;
+    case 1: return 3;
+    case 2: return 8;
+    case 3: return 16;
+    case 4: return 33;
+    case 5: return 67;
+    case 6: return 100;
     default: return 0;
     }
 }
@@ -58,8 +63,10 @@ std::vector<Pet> pets = {
 };
 bool buyPet(std::vector<Pet>& pets, int index, int& money) {
     if (pets[index].owned) return false;
-    if (money < pets[index].price) return false;
-
+    if (money < pets[index].price) {
+        cantafford = true;
+		return false;
+    }
     money -= pets[index].price;
     pets[index].owned = true;
     return true;
@@ -88,7 +95,6 @@ void SetImguiStyle() {
     style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.6f, 0.3f, 0.3f, 1.0f);  // Red color (RGBA: 1, 0, 0, 1)
     style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(1.0f, 1.0f, 1.0f, 0.6f);
     style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.5f, 0.2f, 0.2f, 1.0f);
-    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.9f, 0.15f, 0.15f, 1.0f);
     style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
     style.Colors[ImGuiCol_Border] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     style.Colors[ImGuiCol_BorderShadow] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -99,6 +105,10 @@ void SetImguiStyle() {
     style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.7f);
 	style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.9f, 0.1f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_FrameBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.95f);
+    style.Colors[ImGuiCol_PopupBg] = ImVec4(0.06f, 0.06f, 0.06f, 0.95f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.85f, 0.15f, 0.15f, 1.00f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.95f, 0.30f, 0.30f, 1.00f);
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(1.00f, 0.45f, 0.45f, 1.00f);
     
 
     ImGui::GetStyle().Colors[ImGuiCol_WindowBg].w = 1.0f;
@@ -110,6 +120,8 @@ void SetImguiStyle() {
     ImGui::GetStyle().ScrollbarRounding = 10.0f;
     ImGui::GetStyle().FramePadding = ImVec2(7, 3);
     ImGui::GetStyle().WindowRounding = 7.0f;
+	ImGui::GetStyle().PopupRounding = 7.0f;
+    ImGui::GetStyle().PopupBorderSize = 0.3f;
 }
 
 //------------------------------
@@ -128,8 +140,11 @@ void RenderMenu(bool* open)
 
     ImGui::Begin(AppName, open, dwFlag);
 
+    ma_engine_set_volume(&engine, clickVolume);
+
     if (!initialized) {
         
+
         minerCountdown[miner] = GetminerCountdown(miner);
         hackerCountdown[hacker] = GethackerCountdown(hacker);
 
@@ -176,6 +191,21 @@ void RenderMenu(bool* open)
         currentPPS += 25;
     }
 
+    if (cantafford) {
+        ImGui::OpenPopup("Wait!");
+        cantafford = false;
+    }
+    if (ImGui::BeginPopupModal("Wait!", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("You can not afford this upgrade!");
+        ImGui::Separator();
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
   
     using namespace std::chrono;
     static steady_clock::time_point lastAutoTick = steady_clock::now();
@@ -206,10 +236,10 @@ void RenderMenu(bool* open)
 
                 int reward = 0;
                 std::wstring found;
-                if (r <= 60) { reward = 100;  found = L"Coal"; }
-                else if (r <= 85) { reward = 200; found = L"Iron"; }
-                else if (r <= 95) { reward = 500; found = L"Gold"; }
-                else if (r <= 99) { reward = 1000; found = L"Diamond"; }
+                if (r <= 60) { reward = 150;  found = L"Coal"; }
+                else if (r <= 85) { reward = 300; found = L"Iron"; }
+                else if (r <= 95) { reward = 600; found = L"Gold"; }
+                else if (r <= 99) { reward = 1300; found = L"Diamond"; }
                 else { reward = 3000; found = L"Emerald"; }
 
                 points += reward;
@@ -232,11 +262,11 @@ void RenderMenu(bool* open)
 
                 int reward = 0;
                 std::wstring found;
-                if (r <= 55) { reward = 250;  found = L"Coal"; }
-                else if (r <= 83) { reward = 500; found = L"Iron"; }
+                if (r <= 55) { reward = 301;  found = L"Coal"; }
+                else if (r <= 83) { reward = 600; found = L"Iron"; }
                 else if (r <= 95) { reward = 1000; found = L"Gold"; }
-                else if (r <= 99) { reward = 2500; found = L"Diamond"; }
-                else { reward = 7000; found = L"Emerald"; }
+                else if (r <= 99) { reward = 3000; found = L"Diamond"; }
+                else { reward = 10000; found = L"Emerald"; }
 
                 points += reward;
 
@@ -263,11 +293,11 @@ void RenderMenu(bool* open)
                 std::uniform_int_distribution<int> dist(1, 100);
                 int hr = dist(hackerRng);
 
-                if (hr <= 60) { success = true; }
+                if (hr <= 70) { success = true; }
                 else { success = false; }
 
                 if (success) {
-                    std::uniform_int_distribution<int> dist(300, 2000);
+                    std::uniform_int_distribution<int> dist(1500, 4500);
                     hackerReward = dist(minerRng);
                     points += hackerReward;
 
@@ -293,11 +323,11 @@ void RenderMenu(bool* open)
                 std::uniform_int_distribution<int> dist(1, 100);
                 int hr = dist(hackerRng);
 
-                if (hr <= 67) { success = true; }
+                if (hr <= 80) { success = true; }
                 else { success = false; }
 
                 if (success) {
-                    std::uniform_int_distribution<int> dist(1777, 5000);
+                    std::uniform_int_distribution<int> dist(3333, 7777);
                     hackerReward = dist(minerRng);
                     points += hackerReward;
 
@@ -505,6 +535,11 @@ void RenderMenu(bool* open)
             ImGui::SetCursorPos(ImVec2(curPos.x + offset.x, curPos.y + offset.y));
 
             if (ImGui::Button(buttonIdOnly, animatedSize)) {
+                if (isAudioInitialized) {
+                    if (idx >= 0 && idx < static_cast<int>(clicksounds.size())) {
+                        bool played = PlaySoundFromWidePath(clicksounds[idx]);
+                    }
+                }
                 points += currentPPC;
                 lastClick[key] = now;
             }
@@ -660,11 +695,7 @@ void RenderMenu(bool* open)
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 50)
-                {
-                    points -= 50;
-                    manual = 2;
-                }
+                Upgrade(manual, 50, 2);
             }
             ImGui::Text("Manual click 1 -> 2");
         }
@@ -673,11 +704,7 @@ void RenderMenu(bool* open)
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 500)
-                {
-                    points -= 500;
-                    manual = 3;
-                }
+                Upgrade(manual, 500, 3);
             }
             ImGui::Text("Manual click 2 -> 5");
 		}
@@ -686,42 +713,29 @@ void RenderMenu(bool* open)
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 1997)
-                {
-                    points -= 1997;
-                    manual = 4;
-                }
+                Upgrade(manual, 1997, 4);
   
             }
-            ImGui::Text("Manual click 5 -> 10");
+            ImGui::Text("Manual click 5 -> 12");
         }
         else if (manual == 4) {
             ImGui::Text("Manual click upgrade (7.777$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 7777)
-                {
-                    points -= 7777;
-                    manual = 5;
-                }
-
+                Upgrade(manual, 7777, 5);
             }
-            ImGui::Text("Manual click 10 -> 20");
+            ImGui::Text("Manual click 12 -> 24");
         }
+
         else if (manual == 5) {
-            ImGui::Text("Manual click upgrade (99.999$)");
+            ImGui::Text("Manual click upgrade (27.999$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 99999)
-                {
-                    points -= 99999;
-                    manual = 6;
-                }
-
+                Upgrade(manual, 27999, 6);
             }
-            ImGui::Text("Manual click 20 -> 30");
+            ImGui::Text("Manual click 24 -> 40");
         }
         else {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -738,78 +752,54 @@ void RenderMenu(bool* open)
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 100)
-                {
-                    points -= 100;
-                    iauto = 1;
-                }
+                Upgrade(iauto, 100, 1);
             }
-            ImGui::Text("Your first way to AFK farm! (1$ per second)");
+            ImGui::Text("Your first way to AFK farm! (3$ per second)");
 		}
         else if (iauto == 1) {
             ImGui::Text("Upgrade autoclicker (777$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 777)
-                {
-                    points -= 777;
-                    iauto = 2;
-                }
+                Upgrade(iauto, 777, 2);
             }
-            ImGui::Text("Upgrade: 1$ per sec. -> 5$ per sec.");
+            ImGui::Text("Upgrade: 3$ per sec. -> 8$ per sec.");
         }
         else if (iauto == 2) {
             ImGui::Text("Upgrade autoclicker (6.666$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 6666)
-                {
-                    points -= 6666;
-                    iauto = 3;
-                }
+                Upgrade(iauto, 6666, 3);
             }
-            ImGui::Text("Upgrade: 5$ per sec. -> 10$ per sec.");
+            ImGui::Text("Upgrade: 8$ per sec. -> 16$ per sec.");
         }
         else if (iauto == 3) {
             ImGui::Text("Upgrade autoclicker (17.000$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 17000)
-                {
-                    points -= 17000;
-                    iauto = 4;
-                }
+                Upgrade(iauto, 17000, 4);
             }
-            ImGui::Text("Upgrade: 10$ per sec. -> 15$ per sec.");
+            ImGui::Text("Upgrade: 16$ per sec. -> 33$ per sec.");
         }
         else if (iauto == 4) {
             ImGui::Text("Upgrade autoclicker (70.000$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 70000)
-                {
-                    points -= 70000;
-                    iauto = 5;
-                }
+                Upgrade(iauto, 70000, 5);
             }
-            ImGui::Text("Upgrade: 15$ per sec. -> 20$ per sec.");
+            ImGui::Text("Upgrade: 33$ per sec. -> 67$ per sec.");
         }
         else if (iauto == 5) {
             ImGui::Text("Upgrade autoclicker (166.666$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!"))
             {
-                if (points >= 166666)
-                {
-                    points -= 166666;
-                    iauto = 6;
-                }
+                Upgrade(iauto, 166666, 6);
             }
-            ImGui::Text("Upgrade: 20$ per sec. -> 35$ per sec.");
+            ImGui::Text("Upgrade: 67$ per sec. -> 100$ per sec.");
         }
         else {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -832,8 +822,11 @@ void RenderMenu(bool* open)
                     minerCountdown[miner] = GetminerCountdown(miner);
                     minerStartTime = now;
 				}
+                else {
+					cantafford = true;
+                }
             }
-            ImGui::Text("Miner stats:\nOne ore every 40 seconds!\nCoal - 60%% (100 points)\nIron - 25%% (200 points)\nGold - 10%% (500 points)\nDiamond - 4%% (1000 points)\nEmerald - 1%% (3000 points)");
+            ImGui::Text("Miner stats:\nOne ore every 20 seconds!\nCoal - 60%% (150 points)\nIron - 25%% (300 points)\nGold - 10%% (600 points)\nDiamond - 4%% (1300 points)\nEmerald - 1%% (3000 points)");
         }
         else if (miner == 1) {
             ImGui::Text("Upgrade miner (27.000$)");
@@ -846,8 +839,11 @@ void RenderMenu(bool* open)
                     minerCountdown[miner] = GetminerCountdown(miner);
                     minerStartTime = now;
                 }
+                else {
+                    cantafford = true;
+                }
             }
-            ImGui::Text("Miner upgrades:\nOne ore every 40 -> 35 seconds!\nCoal - 60%% -> 55%% (100 -> 250 points)\nIron - 25%% -> 28%% (200 -> 500 points)\nGold - 10%% -> 12%% (500 -> 1000 points)\nDiamond - 4%% -> 4%% (1000 -> 2500 points)\nEmerald - 1%% -> 1%% (3000 -> 7000 points)");
+            ImGui::Text("Miner upgrades:\nOne ore every 20 -> 15 seconds!\nCoal - 60%% -> 55%% (150 -> 301 points)\nIron - 25%% -> 28%% (300 -> 600 points)\nGold - 10%% -> 12%% (600 -> 1000 points)\nDiamond - 4%% -> 4%% (1300 -> 3000 points)\nEmerald - 1%% -> 1%% (3000 -> 10000 points)");
         }
         else {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -870,22 +866,28 @@ void RenderMenu(bool* open)
                     hackerCountdown[hacker] = GethackerCountdown(hacker);
 					hackerStartTime = now;
                 }
+                else {
+                    cantafford = true;
+                }
             }
-            ImGui::Text("Hacker stats:\nOne Hack attemp every 45 seconds\nChance of a successful hack -> 60%%\nPoints pool upon success -> 300$ - 2.000$");
+            ImGui::Text("Hacker stats:\nOne Hack attemp every 25 seconds\nChance of a successful hack -> 70%%\nPoints pool upon success -> 1.500$ - 4.500$");
         }
         else if (hacker == 1) {
-            ImGui::Text("Upgrade hacker (100.777$)");
+            ImGui::Text("Upgrade hacker (77.777$)");
             ImGui::SameLine();
             if (ImGui::Button("Buy it!")) {
-                if (points >= 100777)
+                if (points >= 77777)
                 {
-                    points -= 100777;
+                    points -= 77777;
                     hacker = 2;
                     hackerCountdown[hacker] = GethackerCountdown(hacker);
                     hackerStartTime = now;
                 }
+                else {
+                    cantafford = true;
+                }
             }
-            ImGui::Text("Hacker upgrade:\nOne Hack attemp every 45 -> 40 seconds\nChance of a successful hack 60%% -> 67%%\nPoints pool upon success -> 1.777$ - 5.000$");
+            ImGui::Text("Hacker upgrade:\nOne Hack attemp every 25 -> 20 seconds\nChance of a successful hack 70%% -> 80%%\nPoints pool upon success -> 3.333$ - 7.777$");
         }
         else {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -927,7 +929,7 @@ void RenderMenu(bool* open)
                         if (petsCooldownRemaining <= 0) {
                             equiped_pet = i;
                             if (miner > 0 && miner < 3) {
-                                int newVal = minerCountdown[miner] - 3;
+                                int newVal = minerCountdown[miner] - 7;
                                 minerCountdown[miner] = (newVal > 1) ? newVal : 1;
                             }
                             if (hacker > 0 && hacker < 3) {
@@ -975,7 +977,7 @@ void RenderMenu(bool* open)
         //brooo description
         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.1f, 1.0f), "Brooo >"); ImGui::SameLine();
         ImGui::Text("Miner's cooldown is"); ImGui::SameLine();
-		ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), "reduced by 3 seconds."); ImGui::Spacing();
+		ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), "reduced by 7 seconds."); ImGui::Spacing();
 
 
         //plushie chance description
@@ -1004,12 +1006,13 @@ void RenderMenu(bool* open)
 			ImGui::TextColored(ImVec4(1.0f, 0.1f, 0.1f, 1.0f), "none");
         }
         if (showpetmsg) {
-            ImGui::OpenPopup("Wait!");
+            ImGui::OpenPopup("Wait-wait-wait");
 			showpetmsg = false;
         }
-        if(ImGui::BeginPopupModal("Wait!", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        if(ImGui::BeginPopupModal("Wait-wait-wait", NULL, ImGuiWindowFlags_AlwaysAutoResize))
         {
             ImGui::Text("%s", WideToUtf8(petsMessage).c_str());
+			ImGui::Separator();
             if (ImGui::Button("OK", ImVec2(120, 0)))
             {
                 ImGui::CloseCurrentPopup();
@@ -1032,15 +1035,30 @@ void RenderMenu(bool* open)
         ImGui::Text("Points:%d", static_cast<int>(pointsVisual));
     }
  /*changelog*/   else if (active_tab == 7) {
-        ImGui::Text("v0.1 (xx.xx.2026)\n>>> Release!\n\n");
+        ImGui::Text("v0.1 (17.02.2026)\n>>> Release!\n\n");
         ImGui::SetCursorPos(ImVec2(dynamicWindowWidth / 3.5, dynamicWindowHeight - 70));
         ImGui::Text("Points:%d", static_cast<int>(pointsVisual));
     }
   /*settings*/  else if (active_tab == 8) {
-        ImGui::Text("eto prosto pizdec");
-        if (ImGui::Button("Reset all")) {
-			showConfirmReset = true;
-		}
+        
+        static const char* sounds[] = { "Click 1", "Click 2", "Click 3", "Punch", "Boom", "Disable"};
+        if (ImGui::Button("Reset all stats", ImVec2(300, 30))) {
+            showConfirmReset = true;
+        }
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 0.95f));
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.90f, 0.20f, 0.20f, 1.00f));
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(1.00f, 0.40f, 0.40f, 1.00f));
+        ImGui::SetNextItemWidth(250);
+        ImGui::SliderFloat("Click sound volume", &clickVolume, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput);
+        ImGui::SetNextItemWidth(250);
+        ImGui::Combo("Select click sound", &idx, sounds, IM_ARRAYSIZE(sounds));
+        ImGui::PopStyleColor(3);
+		
+
+
         ImGui::SetCursorPos(ImVec2(dynamicWindowWidth / 3.5, dynamicWindowHeight - 70));
         ImGui::Text("Points:%d", static_cast<int>(pointsVisual));
         
@@ -1059,7 +1077,21 @@ void RenderMenu(bool* open)
 
         if (ImGui::Button("Yes", ImVec2(120, 0)))
         {
-            points = 0; manual = 1; iauto = 0; miner = 0; hacker = 0;
+            points = 0;
+            pointsVisual = 0.0f;
+            manual = 1;
+            iauto = 0;
+            miner = 0;
+            hacker = 0;
+            equiped_pet = -1;
+            for (auto& p : pets) p.owned = false;
+            petsCooldownRemaining = 0;
+            petsMessage.clear();
+            showpetmsg = false;
+            minerStartTime = std::chrono::steady_clock::now();
+            hackerStartTime = std::chrono::steady_clock::now();
+            minerDispFraction = 0.0f;
+            hackerDispFraction = 0.0f;
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();

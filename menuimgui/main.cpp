@@ -16,6 +16,9 @@ ImFont* DefaultFont = nullptr;
 ImFont* BigFont = nullptr;
 ImFont* MiniFont = nullptr;
 
+ma_engine engine;
+
+bool isAudioInitialized = false;
 
 float dynamicWindowWidth = 750.0f;
 float dynamicWindowHeight = 500.0f;
@@ -52,7 +55,7 @@ int main(int, char**)
     wchar_t* AppName2 = new wchar_t[size2];
     MultiByteToWideChar(CP_UTF8, 0, AppClass, -1, AppName2, size);
 
-
+    InitAudio();
 
     RECT desktop;
     GetWindowRect(GetDesktopWindow(), &desktop);
@@ -66,6 +69,7 @@ int main(int, char**)
     if (CreateDeviceD3D(hwnd) < 0)
     {
         CleanupDeviceD3D();
+        CleanupAudio();
         UnregisterClass(wc.lpszClassName, wc.hInstance);
         return 1;
     }
@@ -88,6 +92,14 @@ int main(int, char**)
         size_t pos = wpath.find_last_of(L"\\/");
         return (pos == std::wstring::npos) ? wpath : wpath.substr(0, pos);
         };
+
+    clicksounds.clear();
+    clicksounds.push_back(GetExeDirW() + L"\\Local\\sounds\\click1.wav");
+    clicksounds.push_back(GetExeDirW() + L"\\Local\\sounds\\click2.wav");
+    clicksounds.push_back(GetExeDirW() + L"\\Local\\sounds\\click3.wav");
+    clicksounds.push_back(GetExeDirW() + L"\\Local\\sounds\\punch.wav");
+    clicksounds.push_back(GetExeDirW() + L"\\Local\\sounds\\boom.wav");
+
 
     std::wstring fontPathW = GetExeDirW() + L"\\Local\\font\\web_ibm_mda.ttf";
 
@@ -211,6 +223,7 @@ int main(int, char**)
     ReleaseAllLoadedTextures();
     ReleaseIcons();
     CleanupDeviceD3D();
+    CleanupAudio();
     DestroyWindow(hwnd);
     UnregisterClass(wc.lpszClassName, wc.hInstance);
 

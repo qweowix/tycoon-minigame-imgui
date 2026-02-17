@@ -70,6 +70,48 @@ void LoadGame()
 }
 
 
+void Upgrade(int& name, int price, int level) {
+    if (points >= price)
+    {
+        points -= price;
+        name = level;
+    }
+    else {
+        cantafford = true;
+    }
+}
+
+void InitAudio() {
+    if (ma_engine_init(NULL, &engine) == MA_SUCCESS) {
+        isAudioInitialized = true;
+    }
+}
+
+void CleanupAudio() {
+    if (isAudioInitialized) {
+        ma_engine_uninit(&engine);
+    }
+}
+
+bool PlaySoundFromWidePath(const std::wstring& wpath)
+{
+    if (!isAudioInitialized) return false;
+    std::string utf8Path = WideToUtf8(wpath);
+    if (!utf8Path.empty()) {
+        ma_result r = ma_engine_play_sound(&engine, utf8Path.c_str(), NULL);
+        if (r == MA_SUCCESS) return true;
+    }
+
+    char ansiPath[MAX_PATH] = { 0 };
+    WideCharToMultiByte(CP_ACP, 0, wpath.c_str(), -1, ansiPath, MAX_PATH, NULL, NULL);
+    if (ansiPath[0] != '\0') {
+        ma_result r2 = ma_engine_play_sound(&engine, ansiPath, NULL);
+        if (r2 == MA_SUCCESS) return true;
+    }
+
+    return false;
+}
+
 LPDIRECT3DTEXTURE9 GetIconTexture(const std::string& path)
 {
     auto it = g_IconCache.find(path);
