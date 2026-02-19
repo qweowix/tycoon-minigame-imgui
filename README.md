@@ -10,7 +10,8 @@ A simple yet addictive tycoon game built using the **Dear ImGui** framework. Inv
     * **Hacker:** Generates x-x amount of money every $n$ seconds. (rng based)
     * **Miner:** Excavates ore every $n$ seconds to generate cash.
 * **Customization:** You can switch button hitsounds (that's all now xdd, maybe will be more in the future)
-
+* **Configuration:** The program includes a configuration file that is used to save and load user progress.  
+All progress is stored automatically, so it is preserved between launches.
 
 ## 📸 Preview
 
